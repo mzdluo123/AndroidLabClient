@@ -1,6 +1,7 @@
 package com.luo123.androidlab
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
@@ -45,7 +46,6 @@ class MainActivity : AppCompatActivity() {
             NetworkRequest.Builder().build(),
             object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
-
                     //使用移动网络
                     if (connectivityManager.getNetworkCapabilities(network).hasTransport(
                             NetworkCapabilities.TRANSPORT_CELLULAR
@@ -85,7 +85,12 @@ class MainActivity : AppCompatActivity() {
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    return address in main_webView.url.toString()
+                    if (address in request?.url.toString()){  //如果是论坛内部
+                        return false
+                    }
+                    //如果是外部就使用系统浏览器打开
+                    startActivity(Intent(Intent.ACTION_VIEW,request?.url))
+                    return true
                 }
 
 
@@ -131,9 +136,11 @@ class MainActivity : AppCompatActivity() {
                         "https://lab.kenvix.com/", address
                     )}'"
                 }
+
                 main_webView.evaluateJavascript(script, ValueCallback { })
 
             }
+
             swipe_refresh.isRefreshing = false
         }
 
@@ -141,6 +148,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         if (!main_webView.canGoBack()) {
+            if (isConnByHttp()){
+                address = "https://lab.kenvix.com/"
+            }
             main_webView.loadUrl(address)   //如果是冷启动加载首页
         }
         super.onResume()
