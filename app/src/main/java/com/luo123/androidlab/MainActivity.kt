@@ -33,12 +33,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var connectivityManager: ConnectivityManager
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         connectivityManager =
             getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         setUi()
 
+        //链接变化的监听器
         connectivityManager.requestNetwork(
             NetworkRequest.Builder().build(),
             object : ConnectivityManager.NetworkCallback() {
@@ -63,22 +65,6 @@ class MainActivity : AppCompatActivity() {
                             address = "https://lab.kenvix.com/"
                         }
                     }
-                    //异步任务回调
-                    handler.post {
-                        var script: String
-                        if ("https://x.kenvix.com:7352/" in main_webView.url.toString()) {
-                            script = "window.location.href = '${main_webView.url.toString().replace(
-                                "https://x.kenvix.com:7352/", address
-                            )}'"
-                        } else {
-
-                            script = "window.location.href = '${main_webView.url.toString().replace(
-                                "https://lab.kenvix.com/", address
-                            )}'"
-                        }
-                        main_webView.evaluateJavascript(script, ValueCallback { })
-
-                    }
                 }
 
 
@@ -89,6 +75,7 @@ class MainActivity : AppCompatActivity() {
         settings.javaScriptEnabled = true
         settings.allowFileAccess = true
         settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+        settings.domStorageEnabled = true
         settings.userAgentString += " AndroidLabClient/${BuildConfig.VERSION_NAME}"
 
         //管理加载资源
@@ -105,14 +92,14 @@ class MainActivity : AppCompatActivity() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     Log.d(TAG, "当前url ${view?.url}")
                     if (baseContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {  //横屏状态下
-                        getWindow().setFlags(
+                        window.setFlags(
                             WindowManager.LayoutParams.FLAG_FULLSCREEN,
                             WindowManager.LayoutParams.FLAG_FULLSCREEN
                         )
                         main_webView.settings.apply {
-                            setBuiltInZoomControls(true)
+                            builtInZoomControls = true
                             setSupportZoom(true)
-                            setDisplayZoomControls(true)
+                            displayZoomControls = true
                         }
                         main_webView.evaluateJavascript(SCRIPT,
                             ValueCallback {
@@ -131,7 +118,22 @@ class MainActivity : AppCompatActivity() {
         //下拉刷新回调
         swipe_refresh.setOnRefreshListener {
             main_webView.clearCache(true)
-            main_webView.reload()
+            //异步任务回调
+            handler.post {
+                val script: String
+                if ("https://x.kenvix.com:7352/" in main_webView.url.toString()) {
+                    script = "window.location.href = '${main_webView.url.toString().replace(
+                        "https://x.kenvix.com:7352/", address
+                    )}'"
+                } else {
+
+                    script = "window.location.href = '${main_webView.url.toString().replace(
+                        "https://lab.kenvix.com/", address
+                    )}'"
+                }
+                main_webView.evaluateJavascript(script, ValueCallback { })
+
+            }
             swipe_refresh.isRefreshing = false
         }
 
