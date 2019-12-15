@@ -1,6 +1,5 @@
 package com.luo123.androidlab
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -12,7 +11,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.*
-import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import java.net.InetAddress
@@ -99,6 +97,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
+                    swipe_refresh.isRefreshing = false
                     Log.d(TAG, "当前url ${view?.url}")
                     if (baseContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {  //横屏状态下
                         window.setFlags(  //全屏
@@ -169,7 +168,6 @@ class MainActivity : AppCompatActivity() {
 
             }
 
-            swipe_refresh.isRefreshing = false
         }
 
     }
