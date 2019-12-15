@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
 
         //下拉刷新的颜色
         swipe_refresh.setColorSchemeResources(
-            android.R.color.holo_blue_bright,
+            R.color.bbs_blue,
             android.R.color.holo_green_light, android.R.color.holo_orange_light,
             android.R.color.holo_red_light
         )
