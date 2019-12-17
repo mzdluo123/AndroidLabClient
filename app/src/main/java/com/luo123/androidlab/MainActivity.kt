@@ -25,11 +25,28 @@ class MainActivity : AppCompatActivity() {
     private val TAG = "Main"
     private var address = "https://x.kenvix.com:7352/"
     private var isForeground = true  //是否是前台
-    val SCRIPT = """
+    private val SCRIPT_FULLSCREEN = """
         $('#header-menu').hide();
         $('#nav-dropdown').removeAttr('');
         $('#content > div > div.visible-xs.visible-sm.pagination-block.text-center.ready > div.wrapper').hide();
+        
     """.trimIndent()
+    private val SCRIPT_SEETING = """
+        $('#app-setting').remove();
+$('#main-nav').after(`
+<ul id="app-setting" class="nav navbar-nav pull-left">
+					<li class="">
+						<a class="navigation-link" href="androidlab://setting" title="" id="" data-original-title="客户端设置">
+							
+							<i class="fa fa-fw fa-wrench" data-content=""></i>
+							<span class="visible-xs-inline">客户端设置</span>
+							
+						</a>
+					</li>
+	
+				</ul>
+`);
+        """.trimIndent()
 
     private lateinit var connectivityManager: ConnectivityManager
 
@@ -51,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             NetworkRequest.Builder().build(),
             object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
-                    if (!isForeground){
+                    if (!isForeground) {
                         return
                     }
                     //使用移动网络
@@ -70,7 +87,8 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         if (isConnByHttp()) {
                             Log.d(TAG, "使用内网")
-                            Toast.makeText(baseContext,"下拉刷新即可使用高速内网访问论坛",Toast.LENGTH_SHORT).show()
+                            Toast.makeText(baseContext, "下拉刷新即可使用高速内网访问论坛", Toast.LENGTH_SHORT)
+                                .show()
                             address = "https://lab.kenvix.com/"
                         }
                     }
@@ -83,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         val settings = main_webView.settings
         settings.javaScriptEnabled = true
         settings.allowFileAccess = true
-        settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.domStorageEnabled = true
         settings.userAgentString += " AndroidLabClient/${BuildConfig.VERSION_NAME}"
 
@@ -105,6 +123,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     swipe_refresh.isRefreshing = false
                     Log.d(TAG, "当前url ${view?.url}")
+                    main_webView.evaluateJavascript(SCRIPT_SEETING, {})
                     if (baseContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {  //横屏状态下
                         window.setFlags(  //全屏
                             WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -116,11 +135,9 @@ class MainActivity : AppCompatActivity() {
                             setSupportZoom(true)
                             displayZoomControls = true
                         }
-                        main_webView.evaluateJavascript(SCRIPT,  //插入优化代码
-                            ValueCallback {})
+                        main_webView.evaluateJavascript(SCRIPT_FULLSCREEN,  {})  //插入优化代码
                     }
                 }
-
             }
         //打开文件选择器事件
         main_webView.webChromeClient = object : WebChromeClient() {
@@ -137,7 +154,12 @@ class MainActivity : AppCompatActivity() {
 
                 if (fileChooserParams != null) {
                     //启动文件选择器
-                    startActivityForResult(Intent.createChooser(fileChooserParams.createIntent(), "Select a File to Upload"), 1)
+                    startActivityForResult(
+                        Intent.createChooser(
+                            fileChooserParams.createIntent(),
+                            "Select a File to Upload"
+                        ), 1
+                    )
                     return true
                 }
                 return false
@@ -153,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         )
         //下拉刷新回调
         swipe_refresh.setOnRefreshListener {
-            main_webView.clearCache(true)
+            main_webView.clearCache(false)
             //异步任务回调
             handler.post {
                 val script: String
@@ -176,7 +198,7 @@ class MainActivity : AppCompatActivity() {
 
     //接收文件选择器回调
     public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-      if (requestCode == FILECHOOSER_RESULTCODE) {
+        if (requestCode == FILECHOOSER_RESULTCODE) {
             if (uploadMessage == null) return
             uploadMessage!!.onReceiveValue(
                 WebChromeClient.FileChooserParams.parseResult(
