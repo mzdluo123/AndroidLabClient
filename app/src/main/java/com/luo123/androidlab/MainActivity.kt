@@ -112,6 +112,9 @@ $('#main-nav').after(`
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
+                    if ("file:///android_asset/index.html" in request?.url.toString()) { //如果是错误界面
+                        return false
+                    }
                     if (address in request?.url.toString()) {  //如果是论坛内部
                         return false
                     }
@@ -135,8 +138,16 @@ $('#main-nav').after(`
                             setSupportZoom(true)
                             displayZoomControls = true
                         }
-                        main_webView.evaluateJavascript(SCRIPT_FULLSCREEN,  {})  //插入优化代码
+                        main_webView.evaluateJavascript(SCRIPT_FULLSCREEN, {})  //插入优化代码
                     }
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    view?.loadUrl("file:///android_asset/index.html?errorCode=${error?.description}")
                 }
             }
         //打开文件选择器事件
@@ -179,7 +190,9 @@ $('#main-nav').after(`
             //异步任务回调
             handler.post {
                 val script: String
-                if ("https://x.kenvix.com:7352/" in main_webView.url.toString()) {
+                if ("file://" in main_webView.url.toString()) {   //如果卡在报错界面
+                    script = "window.location.href = '${address}'"
+                } else if ("https://x.kenvix.com:7352/" in main_webView.url.toString()) {
                     script = "window.location.href = '${main_webView.url.toString().replace(
                         "https://x.kenvix.com:7352/", address
                     )}'"
@@ -228,9 +241,16 @@ $('#main-nav').after(`
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && main_webView.canGoBack()) {
-            main_webView.goBack()  //back键返回
-            return true
+        if (keyCode == KeyEvent.KEYCODE_BACK ) {
+            if ("file://" in main_webView.url.toString()){   //错误界面直接退出
+                finish()
+                return true
+            }
+            if (main_webView.canGoBack()){
+                main_webView.goBack()  //back键返回
+                return true
+            }
+
         }
         return super.onKeyDown(keyCode, event)
     }
