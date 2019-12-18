@@ -165,10 +165,10 @@ $('#main-nav').after(`
                     resultCode,
                     intent
                 )
-
             )
             uploadMessage = null
         }
+        super.onActivityResult(requestCode, resultCode, intent)
     }
 
     override fun onPause() {

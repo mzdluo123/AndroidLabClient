@@ -1,5 +1,16 @@
 <resources>
     <string name="app_name">AndroidLab</string>
     <string name="setting">设置</string>
-    <string name="please_waiting">敬请期待</string>
+    <string name="please_waiting">警告\n如果你不理解下面的内容请勿修改设置</string>
+    <string-array name="setting_network_type_array">
+        <item>自动选择</item>
+        <item>仅使用公网</item>
+        <item>仅使用内网</item>
+    </string-array>
+
+    <string-array name="setting_network_type_array_value">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 </resources>

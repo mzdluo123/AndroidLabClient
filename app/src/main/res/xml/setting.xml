@@ -1,0 +1,24 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="base_setting"
+        app:title="基本设置">
+
+        <ListPreference
+            app:dialogTitle="选择连接模式"
+            app:entries="@array/setting_network_type_array"
+            app:entryValues="@array/setting_network_type_array_value"
+            app:key="setting_network_type"
+            app:summary="这个选项控制连接论坛的模式"
+            app:title="连接设置"
+            app:defaultValue="0">
+
+        </ListPreference>
+
+    </PreferenceCategory>
+    <Preference
+        app:key="fuck"
+        app:summary="有问题，尝试自己解决，然后点击这里"
+        app:title="帮帮我" />
+
+</PreferenceScreen>

@@ -12,8 +12,11 @@ class SettingActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setting)
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.settings_container, SettingFragment())
+            .commit()  //显示fragment
         setting_card_view.setOnClickListener {
-            Toast.makeText(this,"ο(=•ω＜=)ρ⌒☆",Toast.LENGTH_SHORT).show()
             click++
             if (click == 5){
                 egg_imageView.visibility = View.VISIBLE

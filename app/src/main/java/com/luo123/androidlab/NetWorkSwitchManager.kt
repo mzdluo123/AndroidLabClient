@@ -1,6 +1,7 @@
 package com.luo123.androidlab
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -8,6 +9,7 @@ import android.net.NetworkRequest
 import android.os.Handler
 import android.webkit.WebView
 import android.widget.Toast
+import androidx.preference.PreferenceManager
 import java.net.InetAddress
 
 class NetWorkSwitchManager(val context: Context, val webView: WebView) {
@@ -15,7 +17,9 @@ class NetWorkSwitchManager(val context: Context, val webView: WebView) {
         PUBLIC, PRIVATE
     }
 
+    private val setting: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private var netWorkType = NetWorkType.PUBLIC
+    private var isAutoSwitch = true
     private val PUBLICADDRESS = "https://x.kenvix.com:7352/"
     private val PRIVATEADDRESS = "https://lab.kenvix.com/"
     private var connectivityManager: ConnectivityManager =
@@ -23,32 +27,46 @@ class NetWorkSwitchManager(val context: Context, val webView: WebView) {
     private var isListenerStarted = true
 
     init {
-        //链接变化的监听器
-        connectivityManager.requestNetwork(
-            NetworkRequest.Builder().build(),
-            object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    if (!isListenerStarted) {
-                        return
+        when (setting.getString("setting_network_type", "0")) {
+            "1" -> {
+                isAutoSwitch = false
+                netWorkType = NetWorkType.PUBLIC
+            }
+            "2" -> {
+                isAutoSwitch = false
+                netWorkType = NetWorkType.PRIVATE
+            }
+        }
+
+        if (isAutoSwitch) {
+            //链接变化的监听器
+            connectivityManager.requestNetwork(
+                NetworkRequest.Builder().build(),
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        if (!isListenerStarted) {
+                            return
+                        }
+                        switch(notice = true)
                     }
-                    switch(notice = true)
-                }
-            })
+                })
 
-    }
-
-
-    //判断是否能链接内网
-    private fun isConnByHttp(): Boolean {
-        return try {
-            val address = InetAddress.getByName("lab.kenvix.com")
-            val reachable = address.isReachable(100)
-            reachable
-        } catch (e: Exception) {
-            false
         }
 
     }
+
+    //判断是否能链接内网
+    private val isConnByHttp: Boolean
+        get() {
+            return try {
+                val address = InetAddress.getByName("lab.kenvix.com")
+                val reachable = address.isReachable(100)
+                reachable
+            } catch (e: Exception) {
+                false
+            }
+
+        }
 
     fun startNetWorkListener() {
         isListenerStarted = true
@@ -61,6 +79,7 @@ class NetWorkSwitchManager(val context: Context, val webView: WebView) {
     }
 
     private fun switch(notice: Boolean = false) {
+        if (!isAutoSwitch) return
         val network = connectivityManager.activeNetwork ?: return
         //使用移动网络
         if (connectivityManager.getNetworkCapabilities(network).hasTransport(
@@ -74,7 +93,7 @@ class NetWorkSwitchManager(val context: Context, val webView: WebView) {
                 NetworkCapabilities.TRANSPORT_WIFI
             )
         ) {
-            if (isConnByHttp()) {
+            if (isConnByHttp) {
                 netWorkType = NetWorkType.PRIVATE
                 if (notice) {
                     Toast.makeText(context, "下拉刷新可通过内网高速访问论坛", Toast.LENGTH_SHORT).show()
