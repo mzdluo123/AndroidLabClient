@@ -1,9 +1,8 @@
 package com.luo123.androidlab
 
-import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.net.*
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -11,10 +10,8 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.*
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
-import java.net.InetAddress
 
 
 class MainActivity : AppCompatActivity() {
@@ -24,7 +21,6 @@ class MainActivity : AppCompatActivity() {
 
     private val TAG = "Main"
     private var address = "https://x.kenvix.com:7352/"
-    private var isForeground = true  //是否是前台
     private val SCRIPT_FULLSCREEN = """
         $('#header-menu').hide();
         $('#nav-dropdown').removeAttr('');
@@ -48,8 +44,7 @@ $('#main-nav').after(`
 `);
         """.trimIndent()
 
-    private lateinit var connectivityManager: ConnectivityManager
-
+    private lateinit var netWorkSwitchManager: NetWorkSwitchManager
 
     private val FILECHOOSER_RESULTCODE = 1
     var uploadMessage: ValueCallback<Array<Uri>>? = null
@@ -58,45 +53,11 @@ $('#main-nav').after(`
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        connectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
         setUi()
         swipe_refresh.isRefreshing = true
-        //链接变化的监听器
 
-        connectivityManager.requestNetwork(
-            NetworkRequest.Builder().build(),
-            object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    if (!isForeground) {
-                        return
-                    }
-                    //使用移动网络
-                    if (connectivityManager.getNetworkCapabilities(network).hasTransport(
-                            NetworkCapabilities.TRANSPORT_CELLULAR
-                        )
-                    ) {
-                        Log.d(TAG, "使用外网")
-                        address = "https://x.kenvix.com:7352/"
-
-                    }
-                    //使用wifi
-                    if (connectivityManager.getNetworkCapabilities(network).hasTransport(
-                            NetworkCapabilities.TRANSPORT_WIFI
-                        )
-                    ) {
-                        if (isConnByHttp()) {
-                            Log.d(TAG, "使用内网")
-                            Toast.makeText(baseContext, "下拉刷新即可使用高速内网访问论坛", Toast.LENGTH_SHORT)
-                                .show()
-                            address = "https://lab.kenvix.com/"
-                        }
-                    }
-                }
-
-
-            })
-
+        netWorkSwitchManager = NetWorkSwitchManager(baseContext,main_webView)
         //设置
         val settings = main_webView.settings
         settings.javaScriptEnabled = true
@@ -188,21 +149,7 @@ $('#main-nav').after(`
         swipe_refresh.setOnRefreshListener {
             main_webView.clearCache(false)
             //异步任务回调
-            handler.post {
-                val script: String
-                if ("file://" in main_webView.url.toString()) {   //如果卡在报错界面
-                    script = "window.location.href = '${address}'"
-                } else if ("https://x.kenvix.com:7352/" in main_webView.url.toString()) {
-                    script = "window.location.href = '${main_webView.url.toString().replace(
-                        "https://x.kenvix.com:7352/", address
-                    )}'"
-                } else {
-                    script = "window.location.href = '${main_webView.url.toString().replace(
-                        "https://lab.kenvix.com/", address
-                    )}'"
-                }
-                main_webView.evaluateJavascript(script, ValueCallback { })
-            }
+            netWorkSwitchManager.refresh(handler)
 
         }
 
@@ -225,18 +172,13 @@ $('#main-nav').after(`
     }
 
     override fun onPause() {
-        isForeground = false
+        netWorkSwitchManager.stopNetWorkListener()
         super.onPause()
     }
 
     override fun onResume() {
-        isForeground = true
-        if (!main_webView.canGoBack()) {
-            if (isConnByHttp()) {
-                address = "https://lab.kenvix.com/"
-            }
-            main_webView.loadUrl(address)   //如果是冷启动加载首页
-        }
+        netWorkSwitchManager.startNetWorkListener()
+        netWorkSwitchManager.refresh(handler)
         super.onResume()
     }
 
@@ -279,16 +221,5 @@ $('#main-nav').after(`
         super.onDestroy()
     }
 
-    //判断是否能链接内网
-    fun isConnByHttp(): Boolean {
-        return try {
-            val address = InetAddress.getByName("lab.kenvix.com")
-            val reachable = address.isReachable(100)
-            reachable
-        } catch (e: Exception) {
-            false
-        }
-
-    }
 
 }
