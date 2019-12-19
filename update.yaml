@@ -1,0 +1,5 @@
+!!com.luo123.androidlab.update.UpdateMessageListModel
+latestVersionCode: 5
+messageList:
+  5: {downloadUrl: '23333', message: "hahahhahaha", version: '1.0'}
+

@@ -10,8 +10,11 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.*
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.luo123.androidlab.update.Updater
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.Exception
 
 
 class MainActivity : AppCompatActivity() {
@@ -57,7 +60,7 @@ $('#main-nav').after(`
         setUi()
         swipe_refresh.isRefreshing = true
 
-        netWorkSwitchManager = NetWorkSwitchManager(baseContext,main_webView)
+        netWorkSwitchManager = NetWorkSwitchManager(baseContext, main_webView)
         //设置
         val settings = main_webView.settings
         settings.javaScriptEnabled = true
@@ -152,6 +155,12 @@ $('#main-nav').after(`
             netWorkSwitchManager.refresh(handler)
 
         }
+        try {
+            Updater(baseContext, handler).checkUpdate()
+        } catch (e: Exception) {
+            Toast.makeText(baseContext, "无法检查更新", Toast.LENGTH_SHORT).show()
+        }
+
 
     }
 
@@ -183,12 +192,12 @@ $('#main-nav').after(`
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK ) {
-            if ("file://" in main_webView.url.toString()){   //错误界面直接退出
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if ("file://" in main_webView.url.toString()) {   //错误界面直接退出
                 finish()
                 return true
             }
-            if (main_webView.canGoBack()){
+            if (main_webView.canGoBack()) {
                 main_webView.goBack()  //back键返回
                 return true
             }
@@ -215,6 +224,9 @@ $('#main-nav').after(`
 
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+    }
 
     override fun onDestroy() {
         main_webView.clearHistory()

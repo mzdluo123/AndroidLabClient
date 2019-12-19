@@ -19,7 +19,8 @@
             android:name=".SettingActivity"
             android:label="@string/setting"
             android:theme="@style/AppTheme"
-            android:parentActivityName=".MainActivity">
+            android:parentActivityName=".MainActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize">
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
