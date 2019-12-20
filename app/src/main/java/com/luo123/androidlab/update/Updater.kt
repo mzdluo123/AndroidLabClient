@@ -9,6 +9,8 @@ import android.os.Environment
 import android.os.Handler
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
+import androidx.preference.PreferenceManager
 import com.luo123.androidlab.MainActivity
 import okhttp3.*
 import org.yaml.snakeyaml.Yaml
@@ -16,7 +18,7 @@ import java.io.File
 import java.io.IOException
 
 
-class Updater(val context: MainActivity, val handler: Handler) {
+class Updater(val context: Context, val handler: Handler) {
     val UPDATELISTURL = "https://github.com/mzdluo123/AndroidLabClient/raw/master/update.yaml"
 
     fun needUpdate(code: Int): Boolean {
@@ -30,7 +32,11 @@ class Updater(val context: MainActivity, val handler: Handler) {
     }
 
 
-    fun checkUpdate() {
+    fun checkUpdate(force:Boolean) {
+        if (!force && !PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean("auto_check_update",true)){
+            return
+        }
         val request = Request.Builder().url(UPDATELISTURL).build()
         val client = OkHttpClient()
         client.newCall(request).enqueue(object : Callback {
@@ -46,12 +52,16 @@ class Updater(val context: MainActivity, val handler: Handler) {
                     yaml.loadAs(response.body?.byteStream(), UpdateMessageListModel::class.java)
                 val model = messageList.latest
                 if (!needUpdate(messageList.latestVersionCode)){
+                    if (force){
+                        Toast.makeText(context,"你当前使用的是最新版本",Toast.LENGTH_SHORT).show()
+                    }
                     return
                 }
                 handler.post {
                     val alertDialog = AlertDialog.Builder(context)
                     alertDialog.setTitle("发现新版本 ${model.version}")
                     alertDialog.setMessage(model.message)
+                    alertDialog.setCancelable(false)
                     alertDialog.setPositiveButton(
                         "下载新版本",
                         DialogInterface.OnClickListener { dialog, which ->
@@ -122,15 +132,9 @@ class Updater(val context: MainActivity, val handler: Handler) {
                     DownloadManager.STATUS_RUNNING -> {
                     }
                     DownloadManager.STATUS_SUCCESSFUL -> {
-                        val intent = Intent()
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        intent.setAction(Intent.ACTION_VIEW) //动作，查看
-                        intent.setDataAndType(
-                            Uri.parse(path),
-                            "application/vnd.android.package-archive"
-                        );//设置类型
-                        context?.startActivity(intent)
-
+                        if (context != null) {
+                            installApk(context,path)
+                        }
                         cursor.close()
                         context!!.unregisterReceiver(this)
                     }
@@ -143,6 +147,29 @@ class Updater(val context: MainActivity, val handler: Handler) {
                 }
             }
 
+        }
+
+        private fun installApk(context: Context, downloadApk: String) {
+            val intent = Intent(Intent.ACTION_VIEW)
+            //版本在7.0以上是不能直接通过uri访问的
+            //版本在7.0以上是不能直接通过uri访问的
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N) {
+                val file = File(downloadApk)
+                // 由于没有在Activity环境下启动Activity,设置下面的标签
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                //参数1:上下文, 参数2:Provider主机地址 和配置文件中保持一致,参数3:共享的文件
+                val apkUri =
+                    FileProvider.getUriForFile(context, context.packageName, file)
+                //添加这一句表示对目标应用临时授权该Uri所代表的文件
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
+            } else {
+                intent.setDataAndType(
+                    Uri.fromFile(File(downloadApk)),
+                    "application/vnd.android.package-archive"
+                )
+            }
+            context.startActivity(intent)
         }
     }
 }

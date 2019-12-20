@@ -11,7 +11,6 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.*
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.luo123.androidlab.update.Updater
 import kotlinx.android.synthetic.main.activity_main.*
@@ -155,7 +154,7 @@ $('#main-nav').after(`
 
         }
         try {
-            Updater(this, handler).checkUpdate()
+            Updater(this, handler).checkUpdate(false)
         } catch (e: Exception) {
             Toast.makeText(baseContext, "无法检查更新", Toast.LENGTH_SHORT).show()
         }

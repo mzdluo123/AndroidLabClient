@@ -5,13 +5,13 @@
         app:title="基本设置">
 
         <ListPreference
+            app:defaultValue="0"
             app:dialogTitle="选择连接模式"
             app:entries="@array/setting_network_type_array"
             app:entryValues="@array/setting_network_type_array_value"
             app:key="setting_network_type"
             app:summary="这个选项控制连接论坛的模式"
-            app:title="连接设置"
-            app:defaultValue="0">
+            app:title="连接设置">
 
         </ListPreference>
 
@@ -20,5 +20,19 @@
         app:key="fuck"
         app:summary="有问题，尝试自己解决，然后点击这里"
         app:title="帮帮我" />
+    <PreferenceCategory
+        app:key="update_setting"
+        app:title="更新设置">
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="auto_check_update"
+            app:summary="自动检查更新开关"
+            app:title="自动检查更新" />
+        <Preference
+            app:key="check_update"
+            app:summary="手动检查更新"
+            app:title="检查更新" />
+    </PreferenceCategory>
+
 
 </PreferenceScreen>
