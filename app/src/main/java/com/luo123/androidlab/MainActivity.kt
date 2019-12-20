@@ -11,6 +11,7 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.*
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.luo123.androidlab.update.Updater
 import kotlinx.android.synthetic.main.activity_main.*
@@ -18,10 +19,7 @@ import java.lang.Exception
 
 
 class MainActivity : AppCompatActivity() {
-
-
     private val handler = Handler()
-
     private val TAG = "Main"
     private var address = "https://x.kenvix.com:7352/"
     private val SCRIPT_FULLSCREEN = """
@@ -55,6 +53,7 @@ $('#main-nav').after(`
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
 
         setUi()
@@ -156,11 +155,13 @@ $('#main-nav').after(`
 
         }
         try {
-            Updater(baseContext, handler).checkUpdate()
+            Updater(this, handler).checkUpdate()
         } catch (e: Exception) {
             Toast.makeText(baseContext, "无法检查更新", Toast.LENGTH_SHORT).show()
         }
-
+//        val alert = AlertDialog.Builder(baseContext,R.style.Theme_AppCompat_Dialog)
+//        alert.setMessage("lalalla")
+//        alert.show()
 
     }
 

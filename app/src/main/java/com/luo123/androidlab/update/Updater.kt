@@ -4,22 +4,36 @@ import android.app.DownloadManager
 import android.content.*
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import com.luo123.androidlab.MainActivity
 import okhttp3.*
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.IOException
 
 
-class Updater(val context: Context, val handler: Handler) {
-    val UPDATELISTURL = "http"
+class Updater(val context: MainActivity, val handler: Handler) {
+    val UPDATELISTURL = "https://github.com/mzdluo123/AndroidLabClient/raw/master/update.yaml"
+
+    fun needUpdate(code: Int): Boolean {
+        val packageManager = context.packageManager
+        val nowCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageManager.getPackageInfo(context.packageName, 0).longVersionCode
+        } else {
+            packageManager.getPackageInfo(context.packageName, 0).versionCode.toLong()
+        }
+        return nowCode < code
+    }
+
 
     fun checkUpdate() {
         val request = Request.Builder().url(UPDATELISTURL).build()
-        OkHttpClient().newCall(request).enqueue(object : Callback {
+        val client = OkHttpClient()
+        client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 handler.post {
                     Toast.makeText(context, "检查更新失败 ${e.message}", Toast.LENGTH_SHORT).show()
@@ -30,7 +44,10 @@ class Updater(val context: Context, val handler: Handler) {
                 val yaml = Yaml()
                 val messageList =
                     yaml.loadAs(response.body?.byteStream(), UpdateMessageListModel::class.java)
-                val model = messageList.latested
+                val model = messageList.latest
+                if (!needUpdate(messageList.latestVersionCode)){
+                    return
+                }
                 handler.post {
                     val alertDialog = AlertDialog.Builder(context)
                     alertDialog.setTitle("发现新版本 ${model.version}")
@@ -49,7 +66,7 @@ class Updater(val context: Context, val handler: Handler) {
                             req.setDescription("文件正在下载中......")
                             req.setVisibleInDownloadsUi(true)
                             //设置下载的路径
-                            //设置下载的路径
+
                             val file = File(
                                 context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                                 "${model.version}.apk"
@@ -106,7 +123,6 @@ class Updater(val context: Context, val handler: Handler) {
                     }
                     DownloadManager.STATUS_SUCCESSFUL -> {
                         val intent = Intent()
-
                         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         intent.setAction(Intent.ACTION_VIEW) //动作，查看
                         intent.setDataAndType(

@@ -1,5 +1,5 @@
 !!com.luo123.androidlab.update.UpdateMessageListModel
-latestVersionCode: 5
+latestVersionCode: 7
 messageList:
-  5: {downloadUrl: '23333', message: "hahahhahaha", version: '1.0'}
+  7: {downloadUrl: 'http://10.0.117.43/AndroidLabClient/2.0.apk', message: "测试版本", version: '测试版本'}
 

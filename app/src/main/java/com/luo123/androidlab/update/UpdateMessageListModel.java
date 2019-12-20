@@ -24,7 +24,8 @@ public class UpdateMessageListModel {
 
     public Map<Integer, UpdateMessageModel> messageList;
 
-    public UpdateMessageModel getLatested(){
+    public UpdateMessageModel getLatest(){
         return messageList.get(latestVersionCode);
     }
+
 }
