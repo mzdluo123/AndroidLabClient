@@ -19,7 +19,7 @@ import java.io.IOException
 
 
 class Updater(val context: Context, val handler: Handler) {
-    val UPDATELISTURL = "https://github.com/mzdluo123/AndroidLabClient/raw/master/update.yaml"
+    val UPDATELISTURL = "https://s5.stst.ml:4433/update.yaml"
 
     fun needUpdate(code: Int): Boolean {
         val packageManager = context.packageManager
@@ -53,7 +53,9 @@ class Updater(val context: Context, val handler: Handler) {
                 val model = messageList.latest
                 if (!needUpdate(messageList.latestVersionCode)){
                     if (force){
-                        Toast.makeText(context,"你当前使用的是最新版本",Toast.LENGTH_SHORT).show()
+                       handler.post {
+                           Toast.makeText(context,"你当前使用的是最新版本",Toast.LENGTH_SHORT).show()
+                       }
                     }
                     return
                 }

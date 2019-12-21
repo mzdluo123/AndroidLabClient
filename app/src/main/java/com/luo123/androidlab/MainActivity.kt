@@ -2,6 +2,7 @@ package com.luo123.androidlab
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -19,6 +20,7 @@ import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
     private val handler = Handler()
+    private var nightMode = false
     private val TAG = "Main"
     private var address = "https://x.kenvix.com:7352/"
     private val SCRIPT_FULLSCREEN = """
@@ -29,8 +31,8 @@ class MainActivity : AppCompatActivity() {
     """.trimIndent()
     private val SCRIPT_SEETING = """
         $('#app-setting').remove();
-$('#main-nav').after(`
-<ul id="app-setting" class="nav navbar-nav pull-left">
+        $('#main-nav').after(`
+        <ul id="app-setting" class="nav navbar-nav pull-left">
 					<li class="">
 						<a class="navigation-link" href="androidlab://setting" title="" id="" data-original-title="客户端设置">
 							
@@ -42,7 +44,58 @@ $('#main-nav').after(`
 	
 				</ul>
 `);
+
         """.trimIndent()
+
+    private val DARKMODE = """
+function sunMoon() {  
+    var styleElem = null,  
+    doc = document,  
+    ie = doc.all,  
+    fontColor = 50,  
+    sel = 'body,body *';  
+    var styleElem = createCSS(sel, setStyle(fontColor), styleElem);  
+ 
+    if (ie) {  
+        doc.attachEvent('onkeydown', onKeyDown);  
+    } else {  
+        doc.addEventListener('keydown', onKeyDown);  
+    };  
+    function onKeyDown(evt) {  
+        if (! (evt.keyCode === 87 || evt.keyCode === 81)) return;  
+        var evt = ie ? window.event: evt;  
+        if (evt.keyCode === 87) {  
+            fontColor = (fontColor >= 100) ? 100 : fontColor + 10  
+        } else if (evt.keyCode === 81) {  
+            fontColor = (fontColor <= 10) ? 10 : fontColor - 10  
+        };  
+        styleElem = createCSS(sel, setStyle(fontColor), styleElem);  
+    };  
+    function setStyle(fontColor) {  
+        var colorArr = [fontColor, fontColor, fontColor];  
+        return 'background-color:#000 !important;color:RGB(' + colorArr.join('%,') + '%) !important;'  
+    };  
+    function createCSS(sel, decl, styleElem) {  
+        var doc = document,  
+        h = doc.getElementsByTagName('head')[0],  
+        styleElem = styleElem;  
+        if (!styleElem) {  
+            s = doc.createElement('style');  
+            s.setAttribute('type', 'text/css');  
+            styleElem = ie ? doc.styleSheets[doc.styleSheets.length - 1] : h.appendChild(s);  
+        };  
+        if (ie) {  
+            styleElem.addRule(sel, decl);  
+        } else {  
+            styleElem.innerHTML = '';  
+            styleElem.appendChild(doc.createTextNode(sel + ' {' + decl + '}'));  
+        };  
+        return styleElem;  
+    };  
+ 
+}  
+sunMoon();
+    """.trimIndent()
 
     private lateinit var netWorkSwitchManager: NetWorkSwitchManager
 
@@ -52,10 +105,8 @@ $('#main-nav').after(`
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setContentView(R.layout.activity_main)
-
         setUi()
+        setContentView(R.layout.activity_main)
         swipe_refresh.isRefreshing = true
 
         netWorkSwitchManager = NetWorkSwitchManager(baseContext, main_webView)
@@ -89,6 +140,9 @@ $('#main-nav').after(`
                     swipe_refresh.isRefreshing = false
                     Log.d(TAG, "当前url ${view?.url}")
                     main_webView.evaluateJavascript(SCRIPT_SEETING, {})
+                    if (nightMode) {
+                        main_webView.evaluateJavascript(DARKMODE, {})
+                    }
                     if (baseContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {  //横屏状态下
                         window.setFlags(  //全屏
                             WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -101,6 +155,8 @@ $('#main-nav').after(`
                             displayZoomControls = true
                         }
                         main_webView.evaluateJavascript(SCRIPT_FULLSCREEN, {})  //插入优化代码
+
+
                     }
                 }
 
@@ -158,9 +214,7 @@ $('#main-nav').after(`
         } catch (e: Exception) {
             Toast.makeText(baseContext, "无法检查更新", Toast.LENGTH_SHORT).show()
         }
-//        val alert = AlertDialog.Builder(baseContext,R.style.Theme_AppCompat_Dialog)
-//        alert.setMessage("lalalla")
-//        alert.show()
+
 
     }
 
@@ -206,10 +260,19 @@ $('#main-nav').after(`
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun setUi() {
-        this.window.decorView.systemUiVisibility =
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR   //设置白底黑图标状态栏
-        supportActionBar?.hide()   //隐藏标题栏
+    fun setUi() {
+        val currentNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        when (currentNightMode) {
+            Configuration.UI_MODE_NIGHT_NO -> {   // 亮色模式
+                this.window.decorView.systemUiVisibility =
+                    View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR   //设置白底黑图标状态栏
+            }
+            Configuration.UI_MODE_NIGHT_YES -> {   //暗色模式
+                setTheme(R.style.MainTheme_Dark)
+                nightMode = true
+            }
+        }
+
     }
 
 
