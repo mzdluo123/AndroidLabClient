@@ -129,13 +129,20 @@ class NetWorkSwitchManager(val context: Context, val webView: WebView) {
     }
 
     fun refresh(handler: Handler) {
-        if (!webView.canGoBack()) {
-            webView.loadUrl(getNewUrl(true))
+        if (!webView.canGoBack()) {  //新打开的界面
+            val url = getNewUrl(true)
+            if (url != webView.url) {
+                webView.loadUrl(url)
+            }
             return
         } else {
-            handler.post(Runnable {
-                webView.loadUrl(getNewUrl(false))
-            })
+            val url = getNewUrl(false)
+            if (url != webView.url) {
+                handler.post(Runnable {
+                    webView.loadUrl(url)
+                })
+            }
+
         }
 
     }

@@ -1,5 +1,5 @@
 !!com.luo123.androidlab.update.UpdateMessageListModel
-latestVersionCode: 7
+latestVersionCode: 8
 messageList:
   7: {downloadUrl: 'http://10.0.117.43/AndroidLabClient/2.1.apk', message: "细节优化", version: 'v2.1'}
-
+  8: {downloadUrl: 'http://10.0.117.43/AndroidLabClient/2.2.apk', message: "新增夜间模式", version: 'v2.2'}

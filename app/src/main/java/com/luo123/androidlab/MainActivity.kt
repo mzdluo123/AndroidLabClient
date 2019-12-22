@@ -1,8 +1,10 @@
 package com.luo123.androidlab
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -10,11 +12,16 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.AlphaAnimation
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.luo123.androidlab.Scripts.Companion.DARKMODE
+import com.luo123.androidlab.Scripts.Companion.SCRIPT_FULLSCREEN
+import com.luo123.androidlab.Scripts.Companion.SCRIPT_SEETING
 import com.luo123.androidlab.update.Updater
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.layout_night.*
 import java.lang.Exception
 
 
@@ -23,83 +30,9 @@ class MainActivity : AppCompatActivity() {
     private var nightMode = false
     private val TAG = "Main"
     private var address = "https://x.kenvix.com:7352/"
-    private val SCRIPT_FULLSCREEN = """
-        $('#header-menu').hide();
-        $('#nav-dropdown').removeAttr('');
-        $('#content > div > div.visible-xs.visible-sm.pagination-block.text-center.ready > div.wrapper').hide();
-        
-    """.trimIndent()
-    private val SCRIPT_SEETING = """
-        $('#app-setting').remove();
-        $('#main-nav').after(`
-        <ul id="app-setting" class="nav navbar-nav pull-left">
-					<li class="">
-						<a class="navigation-link" href="androidlab://setting" title="" id="" data-original-title="客户端设置">
-							
-							<i class="fa fa-fw fa-wrench" data-content=""></i>
-							<span class="visible-xs-inline">客户端设置</span>
-							
-						</a>
-					</li>
-	
-				</ul>
-`);
-
-        """.trimIndent()
-
-    private val DARKMODE = """
-function sunMoon() {  
-    var styleElem = null,  
-    doc = document,  
-    ie = doc.all,  
-    fontColor = 50,  
-    sel = 'body,body *';  
-    var styleElem = createCSS(sel, setStyle(fontColor), styleElem);  
- 
-    if (ie) {  
-        doc.attachEvent('onkeydown', onKeyDown);  
-    } else {  
-        doc.addEventListener('keydown', onKeyDown);  
-    };  
-    function onKeyDown(evt) {  
-        if (! (evt.keyCode === 87 || evt.keyCode === 81)) return;  
-        var evt = ie ? window.event: evt;  
-        if (evt.keyCode === 87) {  
-            fontColor = (fontColor >= 100) ? 100 : fontColor + 10  
-        } else if (evt.keyCode === 81) {  
-            fontColor = (fontColor <= 10) ? 10 : fontColor - 10  
-        };  
-        styleElem = createCSS(sel, setStyle(fontColor), styleElem);  
-    };  
-    function setStyle(fontColor) {  
-        var colorArr = [fontColor, fontColor, fontColor];  
-        return 'background-color:#000 !important;color:RGB(' + colorArr.join('%,') + '%) !important;'  
-    };  
-    function createCSS(sel, decl, styleElem) {  
-        var doc = document,  
-        h = doc.getElementsByTagName('head')[0],  
-        styleElem = styleElem;  
-        if (!styleElem) {  
-            s = doc.createElement('style');  
-            s.setAttribute('type', 'text/css');  
-            styleElem = ie ? doc.styleSheets[doc.styleSheets.length - 1] : h.appendChild(s);  
-        };  
-        if (ie) {  
-            styleElem.addRule(sel, decl);  
-        } else {  
-            styleElem.innerHTML = '';  
-            styleElem.appendChild(doc.createTextNode(sel + ' {' + decl + '}'));  
-        };  
-        return styleElem;  
-    };  
- 
-}  
-sunMoon();
-    """.trimIndent()
-
     private lateinit var netWorkSwitchManager: NetWorkSwitchManager
-
     private val FILECHOOSER_RESULTCODE = 1
+    private var firstLoad = true // 第一次加载网页
     var uploadMessage: ValueCallback<Array<Uri>>? = null
 
 
@@ -108,7 +41,11 @@ sunMoon();
         setUi()
         setContentView(R.layout.activity_main)
         swipe_refresh.isRefreshing = true
-
+        if (nightMode){
+            main_webView.visibility = View.INVISIBLE
+            main_webView.setBackgroundColor(resources.getColor(R.color.dark))
+            night_mode_layout.visibility = View.VISIBLE
+        }
         netWorkSwitchManager = NetWorkSwitchManager(baseContext, main_webView)
         //设置
         val settings = main_webView.settings
@@ -125,6 +62,7 @@ sunMoon();
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
+
                     if ("file:///android_asset/index.html" in request?.url.toString()) { //如果是错误界面
                         return false
                     }
@@ -133,6 +71,7 @@ sunMoon();
                     }
                     //如果是外部就使用系统浏览器打开
                     startActivity(Intent(Intent.ACTION_VIEW, request?.url))
+                    view!!.visibility = View.VISIBLE
                     return true
                 }
 
@@ -140,9 +79,6 @@ sunMoon();
                     swipe_refresh.isRefreshing = false
                     Log.d(TAG, "当前url ${view?.url}")
                     main_webView.evaluateJavascript(SCRIPT_SEETING, {})
-                    if (nightMode) {
-                        main_webView.evaluateJavascript(DARKMODE, {})
-                    }
                     if (baseContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {  //横屏状态下
                         window.setFlags(  //全屏
                             WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -156,9 +92,19 @@ sunMoon();
                         }
                         main_webView.evaluateJavascript(SCRIPT_FULLSCREEN, {})  //插入优化代码
 
-
                     }
+                    if (nightMode && firstLoad) {
+                        main_webView.evaluateJavascript(DARKMODE) {
+                            main_webView.visibility = View.VISIBLE
+                            val alpha = AlphaAnimation(0.0f,1.0f)
+                            alpha.duration = 1200
+                            main_webView.startAnimation(alpha)
+                            firstLoad = false
+                        }
+                    }
+
                 }
+
 
                 override fun onReceivedError(
                     view: WebView?,
@@ -167,6 +113,8 @@ sunMoon();
                 ) {
                     view?.loadUrl("file:///android_asset/index.html?errorCode=${error?.description}")
                 }
+
+
             }
         //打开文件选择器事件
         main_webView.webChromeClient = object : WebChromeClient() {
@@ -204,8 +152,11 @@ sunMoon();
         )
         //下拉刷新回调
         swipe_refresh.setOnRefreshListener {
-            main_webView.clearCache(false)
             //异步任务回调
+            firstLoad = true
+            if (nightMode){
+                main_webView.visibility = View.INVISIBLE
+            }
             netWorkSwitchManager.refresh(handler)
 
         }
