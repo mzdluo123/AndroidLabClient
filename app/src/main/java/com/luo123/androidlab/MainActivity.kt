@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var netWorkSwitchManager: NetWorkSwitchManager
     private val FILECHOOSER_RESULTCODE = 1
     private var firstLoad = true // 第一次加载网页
+    private var lastBackTime = 0L
     var uploadMessage: ValueCallback<Array<Uri>>? = null
 
 
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         setUi()
         setContentView(R.layout.activity_main)
         swipe_refresh.isRefreshing = true
-        if (nightMode){
+        if (nightMode) {
             main_webView.visibility = View.INVISIBLE
             main_webView.setBackgroundColor(resources.getColor(R.color.dark))
             night_mode_layout.visibility = View.VISIBLE
@@ -96,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     if (nightMode && firstLoad) {
                         main_webView.evaluateJavascript(DARKMODE) {
                             main_webView.visibility = View.VISIBLE
-                            val alpha = AlphaAnimation(0.0f,1.0f)
+                            val alpha = AlphaAnimation(0.0f, 1.0f)
                             alpha.duration = 1200
                             main_webView.startAnimation(alpha)
                             firstLoad = false
@@ -142,6 +143,7 @@ class MainActivity : AppCompatActivity() {
                 return false
             }
 
+
         }
 
         //下拉刷新的颜色
@@ -154,11 +156,14 @@ class MainActivity : AppCompatActivity() {
         swipe_refresh.setOnRefreshListener {
             //异步任务回调
             firstLoad = true
-            if (nightMode){
+            if (nightMode) {
                 main_webView.visibility = View.INVISIBLE
             }
             netWorkSwitchManager.refresh(handler)
 
+        }
+        if (firstLoad) {
+            main_webView.loadUrl(address)
         }
         try {
             Updater(this, handler).checkUpdate(false)
@@ -192,13 +197,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         netWorkSwitchManager.startNetWorkListener()
-        netWorkSwitchManager.refresh(handler)
+        //netWorkSwitchManager.refresh(handler)
         super.onResume()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if ("file://" in main_webView.url.toString()) {   //错误界面直接退出
+            if ("file://" in main_webView.url) {   //错误界面直接退出
                 finish()
                 return true
             }
@@ -206,6 +211,14 @@ class MainActivity : AppCompatActivity() {
                 main_webView.goBack()  //back键返回
                 return true
             }
+            if (lastBackTime + 1000 > System.currentTimeMillis()) {  //一秒内两次返回键
+                finish()
+                return true
+            }
+            Toast.makeText(this, "再按一次返回键以退出应用", Toast.LENGTH_SHORT).show()
+            lastBackTime = System.currentTimeMillis()
+            return false
+
 
         }
         return super.onKeyDown(keyCode, event)

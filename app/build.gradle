@@ -11,8 +11,8 @@ android {
         applicationId "com.luo123.androidlab"
         minSdkVersion 24
         targetSdkVersion 29
-        versionCode 9
-        versionName "2.3"
+        versionCode 11
+        versionName "2.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -35,7 +35,7 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.preference:preference:1.1.0'
     // https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
-    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.2.2'
+    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.2.2'
     // https://mvnrepository.com/artifact/org.yaml/snakeyaml
-    compile group: 'org.yaml', name: 'snakeyaml', version: '1.25'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '1.25'
 }
